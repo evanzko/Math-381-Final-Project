@@ -13,10 +13,13 @@
 #x = Random number between 0 and 1
 #r = (u-sig^2/2) + (sdr)* (Z-score(x)
 ###############################
+library(RCurl)
 
+url <- 'https://github.com/evanzko/Math-381-Final-Project/blob/master/AAPL-1year-basic.csv'
+
+data <- getURL(url) 
 #import data from the excel file
-MyData <- read.csv(file='C:/Users/Evan/Google Drive/Math 381/AAPL-1year.csv', header=TRUE, dec = ".",sep=",",stringsAsFactors=FALSE)
-
+MyData <- read.csv(textConnection(data))
 #calculate my variables
 meanR <- mean(MyData[,3], na.rm = TRUE)
 varR <- var(MyData[,3], na.rm = TRUE)
