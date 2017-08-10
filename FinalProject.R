@@ -15,11 +15,11 @@
 ###############################
 library(RCurl)
 
-url <- 'https://github.com/evanzko/Math-381-Final-Project/blob/master/AAPL-1year-basic.csv'
+url <- "https://raw.githubusercontent.com/evanzko/Math-381-Final-Project/master/AAPL-1year-basic.csv"
 
 data <- getURL(url) 
 #import data from the excel file
-MyData <- read.csv(textConnection(data))
+MyData <- read.csv(text = data)
 #calculate my variables
 meanR <- mean(MyData[,3], na.rm = TRUE)
 varR <- var(MyData[,3], na.rm = TRUE)
@@ -27,8 +27,16 @@ sdR <- sd(MyData[,3], na.rm = TRUE)
 drift <- meanR - (varR/2)
 ep <- meanR - (sdR^2/2)
 
-# for(i in 1:252)
-#   rand <- runif(1, 0.0, 1.0) #choose a random number between 0-1
-#   S <- MyData[i-1, 'close'] #get the last closing price
+#values for the future prices
+zF <- numeric(30)
 
+#set the initial value of of future vector as the last value of the closing price
+zF[1] <- MyData[1,'Close']
 
+for(i in 2:30){
+  rand <- runif(1, 0.0, 1.0) #choose a random number between 0-1
+  print(i)
+  S <- zF[i-1] #get the last closing price
+  temp <- exp(drift + sdR*qnorm(rand))
+  zF[i] <- S*temp
+}
