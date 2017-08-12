@@ -35,7 +35,6 @@ zF[1] <- MyData[1,'Close']
 
 for(i in 2:30){
   rand <- runif(1, 0.0, 1.0) #choose a random number between 0-1
-  print(i)
   S <- zF[i-1] #get the last closing price
   temp <- exp(drift + sdR*qnorm(rand))
   zF[i] <- S*temp
