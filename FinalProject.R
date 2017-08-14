@@ -15,27 +15,38 @@
 ###############################
 library(RCurl)
 
-url <- "https://raw.githubusercontent.com/evanzko/Math-381-Final-Project/master/AAPL-1year-basic.csv"
+url <- "https://raw.githubusercontent.com/evanzko/Math-381-Final-Project/master/AAPL-2015-2017.csv"
 
 data <- getURL(url) 
 #import data from the excel file
 MyData <- read.csv(text = data)
 #calculate my variables
-meanR <- mean(MyData[,3], na.rm = TRUE)
-varR <- var(MyData[,3], na.rm = TRUE)
-sdR <- sd(MyData[,3], na.rm = TRUE)
+meanR <- mean(MyData[1:255,'Return'], na.rm = TRUE)
+varR <- var(MyData[1:255,'Return'], na.rm = TRUE)
+sdR <- sd(MyData[1:155,'Return'], na.rm = TRUE)
 drift <- meanR - (varR/2)
 ep <- meanR - (sdR^2/2)
+lastYr <- MyData[1:255, 'Close']
+thisYr <- MyData[256:506,'Close']
 
 #values for the future prices
-zF <- numeric(30)
+pred <- numeric(255)
 
-#set the initial value of of future vector as the last value of the closing price
-zF[1] <- MyData[1,'Close']
+#set the initial value of of future vector as the last value of the closing price 
+pred[1] <- lastYr[255]
 
-for(i in 2:30){
+#make a prediction for the next year 
+for(i in 2:255){
   rand <- runif(1, 0.0, 1.0) #choose a random number between 0-1
-  S <- zF[i-1] #get the last closing price
+  S <- pred[i-1] #get the last closing price
   temp <- exp(drift + sdR*qnorm(rand))
-  zF[i] <- S*temp
+  pred[i] <- S*temp
 }
+
+diff <- numeric(255)
+for(i in 1:255){
+  diff[i] = thisYr[i] - pred[i]
+}
+
+hist(diff)
+
