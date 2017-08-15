@@ -13,52 +13,52 @@
 #x = Random number between 0 and 1
 #r = (u-sig^2/2) + (sdr)* (Z-score(x)
 ###############################
+#import data from the excel file
 library(RCurl)
 
-url <- "https://raw.githubusercontent.com/evanzko/Math-381-Final-Project/master/AAPL-2015-2017.csv"
-
+url <- "https://raw.githubusercontent.com/evanzko/Math-381-Final-Project/master/AAPL-1year-basic.csv"
+#download data
 data <- getURL(url) 
-#import data from the excel file
+#read data from csv file
 MyData <- read.csv(text = data)
-#calculate my variables
-meanR <- mean(MyData[1:255,'Return'], na.rm = TRUE)
-varR <- var(MyData[1:255,'Return'], na.rm = TRUE)
-sdR <- sd(MyData[1:255,'Return'], na.rm = TRUE)
+
+
+#calculate statistical variables from the return calculated from 2016-2017
+meanR <- mean(MyData[,'Return'], na.rm = TRUE) 
+varR <- var(MyData[,'Return'], na.rm = TRUE)
+sdR <- sd(MyData[,'Return'], na.rm = TRUE)
+
+#parameters for model
 drift <- meanR - (varR/2)
-ep <- meanR - (sdR^2/2)
-lastYr <- MyData[1:255, 'Close']
-thisYr <- MyData[256:506,'Close']
+thisYr <- MyData[,'Close'] #real data from 2016-2017 
+numPred <- 30 #the number of days the model is predicting
+nTrials <- 1000 #the number of trials the model is running
 
-#values for the future prices
-pred <- numeric(255)
-
-#set the initial value of of future vector as the last value of the closing price 
-pred[1] <- lastYr[255]
-A = matrix(c(1:255000), nrow = 255, ncol = 1000, byrow = TRUE)
+#create a matrix for multiple trials. Each column represents one trial. Each row is a day
+A = matrix(numeric(nTrials*numPred), nrow = numPred, ncol = nTrials, byrow = TRUE)
+#set the initial prediction value of the matrix as the last value of the closing price
+A[1,] = thisYr[length(MyData$Close)]
 
 #make a prediction for the next year
-for(i in 1:1000){
-  for(j in 2:255){
+for(i in 1:nTrials){
+  for(j in 2:numPred){
     rand <- runif(1, 0.0, 1.0) #choose a random number between 0-1
-    S <- pred[j-1] #get the last closing price
-    temp <- exp(drift + sdR*qnorm(rand))
-    pred[j] <- S*temp
-    A[i,j] <- pred[j]
+    S <- A[j-1,i] #get the last closing price
+    shock <- sdR*qnorm(rand) #standard deviation*z-score
+    delta <- exp(drift + shock) #calulate the change factor of the stock
+    A[j,i] <- S*delta #predict the closing price of the jth day
   }
 }
 
-meanPred <- numeric(255)
-#get the mean of each row which is the mean of all predictions for that day
-for(i in 1:255){
-  meanPred[i] <- mean(A[i,])
-}
+#Statistical analysis of predicted price
+Price30 <- A[numPred,]
+meanP30 <- mean(Price30)
+varP30 <- var(Price30)
+sdP30 <- sd(Price30)
+#95% CI
+error <- qnorm(0.975)*sdP30/sqrt(nTrials)
+left <- meanP30 - error
+right <- meanP30 + error
 
-#calculate the difference between the predicted closing price and the actual price.
-diff <- numeric(255)
-for(i in 1:255){
-  diff[i] = thisYr[i] - meanPred[i]
-}
-x <- c(1:255)
-plot(thisYr, type = 'o', col = 'red', xlab = 'Days', ylab = 'closing price', main = 'closing price of Apple Stock')
-lines(meanPred, type = 'o', col = 'blue')
+
 
