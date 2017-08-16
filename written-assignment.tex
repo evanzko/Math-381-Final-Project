@@ -2,6 +2,7 @@
 \usepackage{blindtext}
 \usepackage[utf8]{inputenc}
 \usepackage{graphicx}
+\usepackage{mathpazo}
 \usepackage{amsmath, amsfonts}
 \usepackage{float}
 \usepackage[section]{placeins}
@@ -153,16 +154,26 @@ We found a more complex strategy was used in a recent study that contributed add
 Explanation of our algorithm:
 \begin{enumerate}
 \item To begin, we read in the data from the csv file
-\item Then we calculate the mean, variance, and standard deviation of the previous year's return data
+\item Then we calculate the mean, variance, and standard deviation from the previous year's return data
+\begin{itemize}
+\item $\mu$ = mean(MyData[,'Return'])
+\item $\sigma^2$ = var(MyData[,'Return'])
+\item $\sigma$ = sd(MyData[,'Return'])
+\end{itemize}
 \item we predict numPred days of closing price data using our algorithm. Our algorithm uses a shock and drift factor to estimate the future stock price.
 \begin{itemize}
-\item  The drift factor is calculated by the mean of the return - (variance/2) ($drift = \mu - \frac{\sigma^2}{2}$)
-\item The shock factor is calculated by taking the product of the standard deviation of the return and the z-score of a random number generated between 0 and 1 ($shock = \sigma*(z-score(rand[0-1]))$
+\item  The drift factor is calculated by the mean of the return - (variance/2)
+(drift = $\mu - \frac{\sigma^2}{2}$)
+\item The shock factor is calculated by taking the product of the standard deviation of the return and the z-score of a random number generated between 0 and 1 ($shock = \sigma*qnorm(random[0-1])$ where qnorm returns returns the number whose cumulative distribution matches the probability supplied 
 \end{itemize}
-\item To estimate the future price we take the product of the previous day's closing price and the result of the e raised to the power of the sum of the drift and shock. ($S_{t+1} = S_t*e^{drift + shock}$)
+\item To estimate the future price we take the product of the previous day's closing price and the result of the e raised to the power of the sum of the drift and shock. 
+\begin{itemize}
+\item $S_{t+1} = S_t*e^{drift + shock}$
+\end{itemize}
 \item To get a more accurate prediction we run the simulation nTrial times. A higher number of runs trends the data towards a a normal distribution
 \item to analyze the predicted data for the 30th day we calculate the mean, varience, and standard deviation of all the trial's 30th day prediction.
-\item we then estimate the 
+\item we then estimate the 95\% confidence interval's error by finding the product of the (z-score of 0.975 * standard deviation)/square root of the number of trials. (error = $z_{1.96}*\frac{\sigma_{30}}{\sqrt{nTrials}})$
+\item We then calculate the 95\% confidence interval from the mean $\pm$ the error (95\% confidence = $\mu \pm z_{1.96}*\frac{\sigma_{30}}{\sqrt{nTrials}})$
 \end{enumerate}
 \text We generated our own algorithm to generate future stock prices. Using mathematical formulas that we found in some of the literature, we altered the formulas to best fit our model. 
 
@@ -237,18 +248,36 @@ right <- meanP30 + error
 \end{verbatim}
 \section{Results}
 
-\subsection{Statistical Analysis of the Result}
+\subsection{Result and Statistical Analysis}
+This plot is a visualization of our algorithm. The black line is the historical data and the blue lines are the 1000 simulations we did. 
+\\
+\includegraphics[width = \textwidth]{1000_trials_mean_error.png}
+
+The histogram below is the histogram of the distribution of the simulations of the stock price in 30 days. We can see that it is normally distributed. \\
 \includegraphics[width = \textwidth]{Rplot.png}
-The table below shows the mean, variance, standard deviation, standard error and 95\% confidence interval of the stock price of Apple in 30 days:
+The table below shows the mean, variance, standard deviation, standard error and 95\% confidence interval of the mean of the stock price of Apple in 30 days:
 \begin{table}[hbt]
   \centering
   \caption{Statistical Analysis}
   \label{stat}
-  \begin{tabular}{|l|l|l|l|l|l|l|}
+  \begin{tabular}{|l|l|l|l|l|l|}
   \hline
-  \multicolumn{1}{|c|}{} & Mean   & Variance & SD & SE & 95\% CI Lower & 95\% CI Upper \\ \hline
-  Stock Price in 30 days & 166.31 & 94.41    & 9.72               & 0.60           & 165.71              & 166.91              \\ \hline
+  \multicolumn{1}{|c|}{} & Mean   & Variance & SD & SE & 95\% CI of mean\\ \hline
+  Stock Price in 30 days & 166.31 & 94.41    & 9.72               & 0.60           & $\left(165.71, 166.91\right) $      \\ \hline
   \end{tabular}
+\end{table}
+
+The table below shows the actual 68\%, 95\%, 99.7\% percentile interval for the price of the stock. Table one shows that the expected return is 166.31, but table two shows that there are chances that things could go crazy. For example, the stock price has 2.5\% of chance to hit lower than \$146.87 or higher than \$185.75. 
+
+\begin{table}[hbt]
+\centering
+\caption{Value at Risk}
+\label{VaR}
+\begin{tabular}{|l|l|l|l|}
+\hline
+\multicolumn{1}{|c|}{} & 68\%             & 95\%             & 99.7\%           \\ \hline
+Value at Risk          & (156.59, 176.03) & (146.87, 185.75) & (137.15, 195.47) \\ \hline
+\end{tabular}
 \end{table}
 
 \subsection{Risks}
@@ -258,12 +287,14 @@ b) an unlikely high or repeated shock due to non-historical events.\\
 c) Since we did not constantly update the drift in this model, $S_t$ will go to infinity as $t \rightarrow \infty$ with probability 1.\cite{GBM}
 
 \subsection{Reasonableness}
-Our result is reasonable as long as our assumption is solid, that there are no surprises in the market. For example, a new employment policy or a new product would dramatically drive up the stock price.  Meanwhile, the human behavior is also hard to model. In the real stock market, the stock price changes because of people buying in and selling out. When a big investment company tries to buy in or sell out some stock, this behavior can be infectious and may cause big changes to the price. Additionally, people often expect the stock price to drop after a period time of increasing and even there is no sign in the market, people will start selling out because they are afraid of the ``upcoming drop”. 
+Our result is reasonable as long as our assumption is solid, that there are no surprises in the market. If the market or the company do meet some surprises, our prediction could be very bad. For example, a new employment policy or a new product could dramatically change the stock prices. Meanwhile, the human behavior is also hard to model. In the real stock market, the stock price changes because of people buying in and selling out. When a big investment company tries to buy in or sell out some stock, this behavior can be infectious to other investors and would cause big changes to the price. Additionally, people often expect the stock price to drop after a period time of increasing and even there is no sign in the market, people will start selling out because they are afraid of the ``upcoming drop”. 
 
 
 \subsection{Validation}
+We did a baseline comparison using our algorithm but instead of predicting the stock price of next month, we simulate the price of this month. In the following plot, the black line is the actual price and the blue points are the simulated expected price for 30 days in this month. As the graph showing, our model gives a reasonable prediction about the trend of the future price. 
 
-\subsection{(\textasciitilde) Baseline Comparison}
+\includegraphics[width = \textwidth]{baseline1000.jpeg}
+
 
 \section{Conclusions}
 
