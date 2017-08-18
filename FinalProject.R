@@ -38,6 +38,10 @@ nTrials <- 1000 #the number of trials the model is running
 A = matrix(numeric(nTrials*numPred), nrow = numPred, ncol = nTrials, byrow = TRUE)
 #set the initial prediction value of the matrix as the last value of the closing price
 A[1,] = thisYr[length(MyData$Close)]
+#for plotting
+x <- c(253:282)
+
+plot(MyData$Close,type = "l",xlim = c(200,300), ylim = c(100,200))
 
 #make a prediction for the next year
 for(i in 1:nTrials){
@@ -48,6 +52,7 @@ for(i in 1:nTrials){
     delta <- exp(drift + shock) #calulate the change factor of the stock
     A[j,i] <- S*delta #predict the closing price of the jth day
   }
+  lines(x, A[,i], col="blue")
 }
 
 #Statistical analysis of predicted price
@@ -56,9 +61,39 @@ meanP30 <- mean(Price30)
 varP30 <- var(Price30)
 sdP30 <- sd(Price30)
 #95% CI
-error <- qnorm(0.975)*sdP30/sqrt(nTrials)
-left <- meanP30 - error
-right <- meanP30 + error
+errorP30 <- qnorm(0.975)*sdP30/sqrt(nTrials)
+leftP30 <- meanP30 - error
+rightP30 <- meanP30 + error
+
+#Statistical analysis of each predicted day i from 1 to 30
+Price <- numeric(30)
+meanP <- numeric(30)
+varP <- numeric(30)
+sdP <- numeric(30)
+error <- numeric(30)
+left <- numeric(30)
+right <- numeric(30)
+
+for (i in 1:30) {
+  #for (j in 1:ntrail){
+  Price <- A[i,]
+  meanP[i] <- mean(Price)
+  varP[i] <- var(Price)
+  sdP[i] <- sd(Price)
+  #95% CI
+  error[i] <- qnorm(0.975)*sdP[i]/sqrt(nTrials)
+  left[i] <- meanP[i] - error[i]
+  right[i] <- meanP[i] + error[i]
+}
+
+#Plot each days statistics so we can visualize how this changes
+#as our prediction gets further out from last date of data
+lines(c(253:282), meanP, col="red")
+lines(c(253:282), left, col="green")
+lines(c(253:282), right, col="green")
+
+#Plot histogram of closing price distribution for 30th day prediction.
+hist(Price30)
 
 
 
